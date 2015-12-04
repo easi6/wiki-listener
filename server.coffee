@@ -3,6 +3,32 @@ util = require 'util'
 co = require 'co'
 Promise = require 'bluebird'
 bodyparser = require 'body-parser'
+config = require 'config'
+https = require 'https'
+querystring = require 'querystring'
+URL = require 'url'
+
+https_post = (url, params) ->
+  postData = JSON.stringify(params)
+  url = URL.parse(url)
+  new Promise (rs, rj) ->
+    response = ""
+    options =
+      hostname: url.hostname
+      path: url.path
+      method: "POST"
+      headers:
+        "Content-Type": "application/json"
+    req = https.request options, (res) ->
+      res.setEncoding("utf8")
+      res.on "data", (d) ->
+        response += d
+      res.on "end", ->
+        rs response
+
+    req.on "error", (e) -> rj e
+    req.write postData
+    req.end()
 
 app = express()
 
@@ -18,10 +44,12 @@ app.post "/github_notification", (req, res) ->
     username = author.login
     usericon = author.avatar_url
 
-    parameters = 
+    parameters =
       text: message
       username: username
       icon_url: usericon
+
+    yield https_post config.slack_webhook, parameters
 
   res.send 200
 
