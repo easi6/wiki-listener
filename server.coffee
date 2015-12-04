@@ -50,10 +50,13 @@ app.post "/github_notification", (req, res) ->
         username: username
         icon_url: usericon
 
+      console.log JSON.stringify(parameters, null, 2)
       response = yield https_post config.slack_webhook, parameters
+      console.log response
 
     res.send 200
   .catch (err) ->
+    console.error err
     res.status(500).send(err.message)
 
 port = process.env.PORT || 9000
