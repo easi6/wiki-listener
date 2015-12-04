@@ -36,22 +36,25 @@ app.use bodyparser.urlencoded(extended: true)
 app.use bodyparser.json()
 
 app.post "/github_notification", (req, res) ->
-  change_pages = req.body.pages
-  author = req.body.sender
+  co ->
+    change_pages = req.body.pages
+    author = req.body.sender
 
-  change_pages.forEach (change_page) ->
-    message = "<#{change_page.html_url}|#{change_page.title}> #{change_page.action}"
-    username = author.login
-    usericon = author.avatar_url
+    change_pages.forEach (change_page) ->
+      message = "<#{change_page.html_url}|#{change_page.title}> #{change_page.action}"
+      username = author.login
+      usericon = author.avatar_url
 
-    parameters =
-      text: message
-      username: username
-      icon_url: usericon
+      parameters =
+        text: message
+        username: username
+        icon_url: usericon
 
-    yield https_post config.slack_webhook, parameters
+      response = yield https_post config.slack_webhook, parameters
 
-  res.send 200
+    res.send 200
+  .catch (err) ->
+    res.status(500).send(err.message)
 
 port = process.env.PORT || 9000
 server = app.listen parseInt(port), ->
